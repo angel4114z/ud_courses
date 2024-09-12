@@ -1,0 +1,2 @@
+# Workshop 1
+In this workshop we must create a first data design of a apartment complex application, which must contain a technical report that includes user stories, technical and design consideration/decisions, and a database design that be describe step bye step.
