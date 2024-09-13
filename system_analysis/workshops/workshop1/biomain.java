@@ -1,5 +1,6 @@
 package system_analysis.workshops.workshop1;
 
+// author: Angel Diaz
 public class biomain {
     public static void main(String[] args) {
         int min_dataset_size = 40;
@@ -12,10 +13,11 @@ public class biomain {
         double weight_t = 0.25;
         int motif_size = 4;
 
-        BioInformatics bio = new BioInformatics(min_dataset_size, max_dataset_size, min_length, max_length, weight_a, weight_c, weight_g, weight_t, motif_size);
+        BioInformatics bio = new BioInformatics(min_dataset_size, max_dataset_size, min_length, max_length, weight_a,
+                weight_c, weight_g, weight_t, motif_size);
 
         int action = -1;
-        do{
+        do {
             java.util.Scanner scanner = new java.util.Scanner(System.in);
             System.out.println("Select an action:");
             System.out.println("1: Generate dataset");
@@ -25,7 +27,7 @@ public class biomain {
             System.out.println("5: load filtered dataset");
             System.out.println("6: Get motif from filtered dataset");
             System.out.println("0: Exit");
-            
+
             while (!scanner.hasNextInt()) {
                 System.out.println("Please enter a valid integer.");
                 scanner.next(); // consume the invalid input
@@ -63,9 +65,9 @@ public class biomain {
                     System.out.println("Invalid action.");
                     break;
             }
-            
+
         } while (action != 0);
 
     }
-    
+
 }
