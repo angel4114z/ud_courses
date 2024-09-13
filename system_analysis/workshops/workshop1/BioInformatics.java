@@ -2,12 +2,12 @@ package system_analysis.workshops.workshop1;
 
 import java.util.Random;
 import java.util.Vector;
-import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
 
 
 public class BioInformatics {
@@ -18,7 +18,8 @@ public class BioInformatics {
     private int min_length; // minimum length of a sequence
     private int max_length; // maximum length of a sequence
     private int motif_size; // size of the motif
-    private CyclicBarrier barrera;
+    private HashMap<String, Integer> motif = new HashMap<String, Integer>();
+    private ExecutorService executor;
 
     public BioInformatics(int min_dataset_size,
                           int max_dataset_size,
@@ -32,9 +33,9 @@ public class BioInformatics {
                         ) {
         this.dataset_size = new Random().nextInt(max_dataset_size - min_dataset_size) + min_dataset_size;
         this.weights[0] = weight_a;
-        this.weights[1] = weight_c + weight_a;
-        this.weights[2] = weight_g + this.weights[1];
-        this.weights[3] = weight_t + this.weights[2];
+        this.weights[1] = weight_c;
+        this.weights[2] = weight_g;
+        this.weights[3] = weight_t;
         this.min_length = min_length;
         this.max_length = max_length;
         this.motif_size = motif_size;
@@ -42,63 +43,58 @@ public class BioInformatics {
 
     public void generate_dataset() {
 
-        System.out.println("Generating dataset with " + this.dataset_size + " sequences");
-
-        barrera = new CyclicBarrier(this.dataset_size);
+        executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
         for (int i = 0; i < this.dataset_size; i++) {
-            Thread t = new Thread(() -> generate_secuence());
-            t.start();
+            executor.submit(() -> generate_secuence());
         }
-        
-        try {
-            System.out.println("Waiting for threads to finish");
-            barrera.await();
-            System.out.println("All threads finished");
-        } catch (InterruptedException e) {
-            System.out.println("interruped \n Error: " + e.getMessage());
-        } catch (BrokenBarrierException e) {
-            System.out.println("barrier \n Error: " + e.getMessage());
-        }
+
+        executor.shutdown();
+        shutdownExecutor();
+
+        save_dataset(1);
         
     }
 
-    public void generate_secuence(){
-
-        System.out.println(" generate Thread " + Thread.currentThread().getName() + " started");
+    private void generate_secuence(){
 
         Random rand = new Random();
         int length = rand.nextInt(this.max_length - this.min_length) + this.min_length;
             String sequence = "";
+            double weight[] = {this.weights[0], this.weights[1] + this.weights[0] , this.weights[2] + this.weights[1] + this.weights[0]  , this.weights[3]};
+
             for (int j = 0; j < length; j++) {
                 double r = rand.nextDouble();
-                if (r < this.weights[0]) {
+                if (r < weight[0]) {
                     sequence += "A";
-                } else if (r < this.weights[1]) {
+                } else if (r < weight[1]) {
                     sequence += "C";
-                } else if (r < this.weights[2]) {
+                } else if (r < weight[2]) {
                     sequence += "G";
                 } else {
                     sequence += "T";
                 }
             }
-
-            System.out.println("generate Thread " + Thread.currentThread().getName() + " finished");
-
-            this.dataset.add(sequence);
-            try {
-                barrera.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (BrokenBarrierException e) {
-                e.printStackTrace();
-            }
             
-    }
+            synchronized(this.dataset){
+                this.dataset.add(sequence);
+            }
+    
+        }
 
-    public void save_dataset() {
+    private void save_dataset(int q) {
         try {
-            FileWriter writer = new FileWriter("dataset.txt");
+
+            String filename = "";
+            if(q == 1){
+                filename = "dataset.txt";
+            }else if(q == 2){
+                filename = "filtered_dataset.txt";
+            }
+
+            FileWriter writer = new FileWriter(filename);
+            
+            
             for (String sequence : this.dataset) {
                 writer.write(sequence + "\n");
             }
@@ -109,24 +105,64 @@ public class BioInformatics {
         }
     }
 
+    public void load_dataset(int q) {
+        try {
+            this.dataset.clear();
 
-    public void get_motif() {
-        HashMap<String, Integer> motif = new HashMap<String, Integer>();
-        
-        for(int i = 0 ; i < this.dataset.size(); i++){
-            String temp_secuence = this.dataset.get(i);
-            int temp_size = temp_secuence.length();
-            for(int j = 0 ; j < temp_size - this.motif_size; j++){
-                String motif_candidate = temp_secuence.substring(j, j + this.motif_size);
-                if(motif.containsKey(motif_candidate)){
-                    motif.put(motif_candidate, motif.get(motif_candidate)+1);
-                }else{
-                    motif.put(motif_candidate, 1);
-                }
+            String filename = "";
+            if(q == 1){
+                filename = "dataset.txt";
+            }else if(q == 2){
+                filename = "filtered_dataset.txt";
             }
+
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(filename));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                this.dataset.add(line);
+            }
+            reader.close();
+            System.out.println("Dataset loaded successfully.");
+        } catch (IOException e) {
+            System.out.println("Error loading dataset: " + e.getMessage());
         }
+    }
+
+
+    public void get_motif(int q) {
+
+        dataset_size = this.dataset.size();
+
+        System.out.println("dataset size: " + dataset_size);
+
+        long startTime = System.currentTimeMillis();
+        
+        executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+        for(int i = 0 ; i < this.dataset.size(); i++){
+            final int index = i;
+            executor.submit(() -> find_motif(index));
+        }
+
+        executor.shutdown();
+        shutdownExecutor();
+        
+
+        long endTime = System.currentTimeMillis();
+        long totalTime = endTime - startTime;
+        long seconds = totalTime / 1000;
+        System.out.println("Total time taken: " + totalTime + " milliseconds\n" + seconds + " seconds");
+
+        save_motif(totalTime, q);
+        
+    }
+
+    private void save_motif(long totalTime, int q) {
+
         int max_motif = 0;
         String max_motif_key = "";
+
+        long seconds = totalTime / 1000;
 
         for(String key : motif.keySet()){
             if(motif.get(key) > max_motif){
@@ -137,7 +173,19 @@ public class BioInformatics {
         System.out.println("The most repeated motif is: " + max_motif_key + " with " + max_motif + " repetitions");
 
         try {
-            FileWriter writer = new FileWriter("motif_counts.txt");
+            String filename = "";
+            if(q == 1){
+                filename = "motif_counts.txt";
+            }else if(q == 2){
+                filename = "filtered_motif_counts.txt";
+            }
+            FileWriter writer = new FileWriter(filename);
+            writer.write("dataset size: " + this.dataset_size + "\n");
+            writer.write("motif size: " + this.motif_size + "\n");
+            writer.write("most repeated motif: " + max_motif_key + " with " + max_motif + " repetitions\n");
+            writer.write("probability of each nucleotide: A=" + this.weights[0] + ", C=" + this.weights[1] + ", G=" + this.weights[2] + ", T=" + this.weights[3] + "\n");
+            writer.write("total time taken: " + totalTime + " milliseconds\n " + seconds + " seconds\n");
+
             for (String key : motif.keySet()) {
                 int count = motif.get(key);
                 writer.write(key + ": " + count + "\n");
@@ -147,21 +195,112 @@ public class BioInformatics {
         } catch (IOException e) {
             System.out.println("Error saving motif counts: " + e.getMessage());
         }
+
     }
 
+    private void find_motif(int i){
+
+        motif.clear();
+        String temp_secuence = this.dataset.get(i);
+        int temp_size = temp_secuence.length();
+
+        System.out.println("secuence size: " + temp_size);
+
+        for(int j = 0 ; j <= temp_size - this.motif_size; j += this.motif_size){
 
 
+            String motif_candidate = temp_secuence.substring(j, j + this.motif_size);
+            if(motif.containsKey(motif_candidate)){
+                motif.put(motif_candidate, motif.get(motif_candidate)+1);
+            }else{
+                motif.put(motif_candidate, 1);
+            }
+        }
 
-    public static void main(String[] args) {
-        BioInformatics bio = new BioInformatics(5,100, 1000, 2000000, 0.25, 0.25, 0.25, 0.25, 4);
-        bio.generate_dataset();
 
-        bio.save_dataset();
-        //bio.get_motif();
+    }
 
-        System.out.println("Program finished");
+    public void shannon_entropy_filter() {
+        dataset_size = this.dataset.size();
 
+        executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        long startTime = System.currentTimeMillis();
+        
+        for(int i = 0 ; i < this.dataset.size(); i++){
+            final int index = i;
+            executor.submit(() -> shannon_entropy(index));
+        }
+
+        executor.shutdown();
+        shutdownExecutor();
+
+        long endTime = System.currentTimeMillis();
+        long totalTime = endTime - startTime;
+        long seconds = totalTime / 1000;
+        System.out.println("Total time taken: " + totalTime + " milliseconds\n" + seconds + " seconds");
+
+        save_dataset(2);
 
         
+    }
+
+    private void shannon_entropy(int i){
+        String temp_secuence = this.dataset.get(i);
+        String replace_secuence = "";
+        int temp_size = temp_secuence.length();
+
+        for(int j = 0 ; j < temp_size - this.motif_size; j += this.motif_size){
+
+            if (j + this.motif_size < temp_size) {
+
+            String temp_motif = temp_secuence.substring(j, j + this.motif_size);
+
+            
+            int[] count = new int[4];
+            
+            for (char nucleotide : temp_motif.toCharArray()) {
+                switch (nucleotide) {
+                    case 'A': count[0]++; break;
+                    case 'C': count[1]++; break;
+                    case 'G': count[2]++; break;
+                    case 'T': count[3]++; break;
+                }
+            }
+            double[] probabilities = new double[4];
+            
+            probabilities[0] = (double) count[0] / this.motif_size;
+            probabilities[1] = (double) count[1] / this.motif_size;
+            probabilities[2] = (double) count[2] / this.motif_size;
+            probabilities[3] = (double) count[3] / this.motif_size;
+            
+            
+            double entropy = 0;
+            for (double p : probabilities) {
+                if (p > 0.0) {
+                    entropy -= (p * (Math.log(p) / Math.log(2)));
+                }
+            }
+            
+            
+            if(entropy > 1.6){
+                replace_secuence += temp_motif;
+            }
+            
+        }
+
+        this.dataset.set(i, replace_secuence);
+        }
+    }
+        
+
+    private void shutdownExecutor() {
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(300, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+        }
     }
 }
