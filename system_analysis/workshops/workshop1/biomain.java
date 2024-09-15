@@ -3,10 +3,10 @@ package system_analysis.workshops.workshop1;
 // author: Angel Diaz
 public class biomain {
     public static void main(String[] args) {
-        int min_dataset_size = 40;
-        int max_dataset_size = 50;
-        int min_length = 100000;
-        int max_length = 500000;
+        int min_dataset_size = 1000;
+        int max_dataset_size = 2000000;
+        int min_length = 5;
+        int max_length = 100;
         double weight_a = 0.25;
         double weight_c = 0.25;
         double weight_g = 0.25;

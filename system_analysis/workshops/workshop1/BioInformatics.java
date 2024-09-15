@@ -136,6 +136,7 @@ public class BioInformatics {
     // Get the motif from the dataset
     public void get_motif(int q) {
 
+        motif.clear();
         dataset_size = this.dataset.size();
         long startTime = System.currentTimeMillis();
         executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
@@ -153,24 +154,22 @@ public class BioInformatics {
         long seconds = totalTime / 1000;
         System.out.println("Total time taken: " + totalTime + " milliseconds\n" + seconds + " seconds");
 
-        save_motif(totalTime, q);
-    }
-
-    // Save the motif and other info to a file
-    private void save_motif(long totalTime, int q) {
-
         int max_motif = 0;
         String max_motif_key = "";
 
-        long seconds = totalTime / 1000;
-
         for (String key : motif.keySet()) {
-            if (motif.get(key) > max_motif) {
+            if (motif.get(key) != null && motif.get(key) > max_motif) {
                 max_motif = motif.get(key);
                 max_motif_key = key;
             }
         }
         System.out.println("The most repeated motif is: " + max_motif_key + " with " + max_motif + " repetitions");
+
+        save_motif(totalTime, seconds, max_motif_key, max_motif, q);
+    }
+
+    // Save the motif and other info to a file
+    private void save_motif(long totalTime, long seconds, String max_motif_key, int max_motif, int q) {
 
         try {
             String filename = "";
@@ -202,13 +201,14 @@ public class BioInformatics {
     // Find the motif in the sequence
     private void find_motif(int i) {
 
-        motif.clear();
         String temp_secuence = this.dataset.get(i);
         int temp_size = temp_secuence.length();
 
-        System.out.println("secuence size: " + temp_size);
+        if (temp_size < this.motif_size) {
+            return;
+        }
 
-        for (int j = 0; j <= temp_size - this.motif_size; j += this.motif_size) {
+        for (int j = 0; j <= temp_size - this.motif_size; j ++) {
 
             String motif_candidate = temp_secuence.substring(j, j + this.motif_size); // get the motif candidate
             if (motif.containsKey(motif_candidate)) {
