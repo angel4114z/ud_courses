@@ -227,7 +227,7 @@ public class BioInformatics {
             return;
         }
 
-        for (int j = 0; j <= temp_size - this.motif_size; j ++) {
+        for (int j = 0; j <= temp_size - this.motif_size; j++) {
 
             String motif_candidate = temp_secuence.substring(j, j + this.motif_size); // get the motif candidate
             if (motif.containsKey(motif_candidate)) {

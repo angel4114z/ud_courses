@@ -75,6 +75,7 @@ public class biomain {
     }
 
     private static void setCustomVariables(BioInformatics bio) {
+
         java.util.Scanner scanner = new java.util.Scanner(System.in);
         System.out.println("Enter the minimum dataset size:");
         int min_dataset_size = scanner.nextInt();
@@ -84,7 +85,7 @@ public class biomain {
         int min_length = scanner.nextInt();
         System.out.println("Enter the maximum length:");
         int max_length = scanner.nextInt();
-        System.out.println("Enter the weight for 'A':");
+        System.out.println("Enter the weight for 'A': (use , for decimal)");
         double weight_a = scanner.nextDouble();
         System.out.println("Enter the weight for 'C':");
         double weight_c = scanner.nextDouble();
@@ -99,5 +100,6 @@ public class biomain {
                 weight_t, motif_size);
 
         System.out.println("Custom variables set.");
+
     }
 }
