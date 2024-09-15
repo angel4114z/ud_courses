@@ -26,6 +26,7 @@ public class biomain {
             System.out.println("4: Filter by Shannon entropy");
             System.out.println("5: load filtered dataset");
             System.out.println("6: Get motif from filtered dataset");
+            System.out.println("7: Set custom variables");
             System.out.println("0: Exit");
 
             while (!scanner.hasNextInt()) {
@@ -61,6 +62,9 @@ public class biomain {
                     bio.get_motif(2);
                     System.out.println("filtered Motif obtained.");
                     break;
+                case 7:
+                    setCustomVariables(bio);
+                    break;
                 default:
                     System.out.println("Invalid action.");
                     break;
@@ -70,4 +74,30 @@ public class biomain {
 
     }
 
+    private static void setCustomVariables(BioInformatics bio) {
+        java.util.Scanner scanner = new java.util.Scanner(System.in);
+        System.out.println("Enter the minimum dataset size:");
+        int min_dataset_size = scanner.nextInt();
+        System.out.println("Enter the maximum dataset size:");
+        int max_dataset_size = scanner.nextInt();
+        System.out.println("Enter the minimum length:");
+        int min_length = scanner.nextInt();
+        System.out.println("Enter the maximum length:");
+        int max_length = scanner.nextInt();
+        System.out.println("Enter the weight for 'A':");
+        double weight_a = scanner.nextDouble();
+        System.out.println("Enter the weight for 'C':");
+        double weight_c = scanner.nextDouble();
+        System.out.println("Enter the weight for 'G':");
+        double weight_g = scanner.nextDouble();
+        System.out.println("Enter the weight for 'T':");
+        double weight_t = scanner.nextDouble();
+        System.out.println("Enter the motif size:");
+        int motif_size = scanner.nextInt();
+
+        bio.setVariables(min_dataset_size, max_dataset_size, min_length, max_length, weight_a, weight_c, weight_g,
+                weight_t, motif_size);
+
+        System.out.println("Custom variables set.");
+    }
 }

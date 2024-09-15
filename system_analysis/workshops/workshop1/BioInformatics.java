@@ -59,6 +59,25 @@ public class BioInformatics {
 
     }
 
+    public void setVariables(int min_dataset_size,
+            int max_dataset_size,
+            int min_length,
+            int max_length,
+            double weight_a,
+            double weight_c,
+            double weight_g,
+            double weight_t,
+            int motif_size) {
+        this.dataset_size = new Random().nextInt(max_dataset_size - min_dataset_size) + min_dataset_size;
+        this.weights[0] = weight_a;
+        this.weights[1] = weight_c;
+        this.weights[2] = weight_g;
+        this.weights[3] = weight_t;
+        this.min_length = min_length;
+        this.max_length = max_length;
+        this.motif_size = motif_size;
+    }
+
     // Generate a sequence
     private void generate_secuence() {
 
