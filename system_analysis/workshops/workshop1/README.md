@@ -1,0 +1,2 @@
+# Workshop 1
+for this workshop we must create a system that generate a dataset that contains DNA secuences, find the motif in that secuences, filter the dataset using entropy, find the motif in the secuences of the filtered dataset and compare results, with a technical report that explain the system analysis.
